@@ -1,0 +1,79 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-example-apiserver
+  namespace: default
+  labels:
+    api: my-example
+    apiserver: "true"
+spec:
+  selector:
+    matchLabels:
+      api: my-example
+      apiserver: "true"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        api: my-example
+        apiserver: "true"
+    spec:
+      containers:
+      - name: apiserver
+        image: harbor.shopeemobile.com/ecp/irmas/sxy_apiserver_test:1.0.0
+        volumeMounts:
+        - name: apiserver-certs
+          mountPath: /apiserver.local.config/certificates
+          readOnly: true
+        command:
+        - "./apiserver"
+        args:
+        - "--etcd-servers=http://etcd-svc:2379"
+        - "--tls-cert-file=/apiserver.local.config/certificates/tls.crt"
+        - "--tls-private-key-file=/apiserver.local.config/certificates/tls.key"
+        - "--audit-log-path=-"
+        - "--feature-gates=APIPriorityAndFairness=false"
+        - "--audit-log-maxage=0"
+        - "--audit-log-maxbackup=0"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 20Mi
+          limits:
+            cpu: 100m
+            memory: 30Mi
+      volumes:
+      - name: apiserver-certs
+        secret:
+          secretName: my-example
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/tls
+metadata:
+  name: my-example
+  namespace: default
+  labels:
+    api: my-example
+    apiserver: "true"
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURsVENDQW4yZ0F3SUJBZ0lJWHA2RGR3dGlTUUV3RFFZSktvWklodmNOQVFFTEJRQXdhakVMTUFrR0ExVUUKQmhNQ2RXNHhDekFKQmdOVkJBZ01Bbk4wTVFvd0NBWURWUVFIREFGc01Rb3dDQVlEVlFRS0RBRnZNUXN3Q1FZRApWUVFMREFKdmRURXBNQ2NHQTFVRUF3d2diWGt0WlhoaGJYQnNaUzFqWlhKMGFXWnBZMkYwWlMxaGRYUm9iM0pwCmRIa3dIaGNOTWpNd056QTNNRFl6TXpJd1doY05Nek13TnpBME1EWXpNekl3V2pBaE1SOHdIUVlEVlFRREV4WnQKZVMxbGVHRnRjR3hsTG1SbFptRjFiSFF1YzNaak1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQgpDZ0tDQVFFQXQ4SVFMTHJmVEQ3OUpHWVBFSzd1THo2N0F3V3VsZ0thVE05WngxV0lDYUNPU1JqM09KYTRVczM1CnRqWXY3ckNZeGpDdXkwZjVIZHZiUDM3LzhzdThkQm91eWlIYWR3bExwQlN3QU9EOTV0a1YvYzlhTnNyaHRpSHMKRDlkQ041eEpOUmlMRi9nVmFpL0xCM1k3NE44QjA5a3RvYVBGYXk4QXVXZDcvcEVEd01YM0oyZjRIOWk4bGlmQwpCWk5KTnRyeVhHWnFRS2lCMlRYbGRCQ2FnMjNYd29RR2hHcVFER1l6NEJ0TERkSXd1OGo1V2ZhOE9lSHA5LzJFCi9jWVhwc2dBZW9BZ3VLMVFmQ0NuZVN6Q1VVSGtod2lRK3NVd1JOaFVUQWZaRjVsNDFFd3VZZ2diQjE0REd0Q0cKR1g3TWxiMXNHUkJSMzcycVZIVk1pU3I2emU4STd3SURBUUFCbzRHSE1JR0VNQTRHQTFVZER3RUIvd1FFQXdJRgpvREFkQmdOVkhTVUVGakFVQmdnckJnRUZCUWNEQVFZSUt3WUJCUVVIQXdJd0h3WURWUjBqQkJnd0ZvQVVYazNiCmtyVmtVVTNrTUduY3hwSUZUb25oUW1Nd01nWURWUjBSQkNzd0tZSUpiRzlqWVd4b2IzTjBnaFp0ZVMxbGVHRnQKY0d4bExtUmxabUYxYkhRdWMzWmpod1IvQUFBQk1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRQWx2S0xZRnMrTAo0VHpqd3hDYXVkTjRISGJNS0hoc3pxRzhnWjBTNUZ4bC9qYUwrTThSbGs5S3VtcEtXQ05ld2RKZGpobEQ1L3dpClgyMmVSbnJkZmNDZVErZThXUVdyOW5hRVdzMnhLRmRGZFVTZkZiMlI0a1VvcUVrWExnaGdSK3BkNWZ4cFFmUEUKME5GUnpUeUJ4aU9GUzRVUU5hcVhjMFR4LzNFSVRmdjZQazVWd1pkWGhoZjNMNUpaVHFEMEF6WUJ2WE9EY3pQUwo4UW00QWJRKzI4Zi9ENkVCZFY2bXpFMldPeVdFV0NUeDB6NHlJK1RMc1RSejJ1N1crZ3huVmhBenBtTkNkWDhQCjM3RVhwSVBORUplWkY3bWtkRTJPclVhZHAwN05IUTdjaUtoc09YS29pTzBuejAxczg5NWYvWEwxTUo4WndQbjkKRkJuUXhnV2pRa3JECi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  tls.key: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBdDhJUUxMcmZURDc5SkdZUEVLN3VMejY3QXdXdWxnS2FUTTlaeDFXSUNhQ09TUmozCk9KYTRVczM1dGpZdjdyQ1l4akN1eTBmNUhkdmJQMzcvOHN1OGRCb3V5aUhhZHdsTHBCU3dBT0Q5NXRrVi9jOWEKTnNyaHRpSHNEOWRDTjV4Sk5SaUxGL2dWYWkvTEIzWTc0TjhCMDlrdG9hUEZheThBdVdkNy9wRUR3TVgzSjJmNApIOWk4bGlmQ0JaTkpOdHJ5WEdacVFLaUIyVFhsZEJDYWcyM1h3b1FHaEdxUURHWXo0QnRMRGRJd3U4ajVXZmE4Ck9lSHA5LzJFL2NZWHBzZ0Flb0FndUsxUWZDQ25lU3pDVVVIa2h3aVErc1V3Uk5oVVRBZlpGNWw0MUV3dVlnZ2IKQjE0REd0Q0dHWDdNbGIxc0dSQlIzNzJxVkhWTWlTcjZ6ZThJN3dJREFRQUJBb0lCQUNZeHloYmlDTVBhVzllUwo5eEtxcVl0Y2FKYXFPYTJvZ05YeVMyRHBZRXRQK2dNcmswZEozS29wY2Z2enEyYmJnZ1cvM0xVWUVxbW9KeHc5Cms0bXQyMC91bVVjZVhrQmJ5RU1rb2FpdEcxaytTaG5sWFlVQ0NvUkc3TUFtSi9kVEhzeFFlNmpSd2ZHK1dWOEYKcmxDQlNlbjB2RTFhc3hBaVJ1NUNtajFCZXh3NEwybzg4UU45MjhNeFQxZ3NqTnFHUGpoQ0lnN053R3RIZjIrQgpDYS9IYXRlWWR0K0Y3dmh5S2VoY1NlY3gxNVhxcHdaUlNROHJBNGRmS2RMTEI2RnFOSWtDcEdkUzRLSC9UWDNCCkZ1UStFM1piYTluQXFObDlCTDlIeUFqV3h6SGZ4Q1BGMWx6d3JYUEFZZVRGaHc5dlBwdVNqaFAvVlVpR3FSaUgKSHdwb1BWRUNnWUVBNU1YeHJsd3NFZGhjek4wdEJsRVFTUlhuWmd4ckNCOGswR3lKc1ZaRUdvdUhiWVdya2FKawpiSVdpVVZXWWxPdEJaWFVDYUxZSzR3WGQwVFF6L3ByRHloZVBCYTJ3bXpCaTIrTWJ4cHFvRGtOVEg3OFRpQjFOClA4bDk5b1JIbzJsd0NydWJwU1FpTzJTSkEyWXZ6M21keEc5bVVsaUZDMENNRnJyTTNKbnZrVTBDZ1lFQXphQ2oKU3Y4ZW10dzNyMEhQUzZ3d1d3eUlFWnJSRGNKODFCbGZIMGtJQXpnTldqQk9vNkxhaURMYVcwUURXMlZ4SHZ1Ywo4eXhET1pFMnBTRXJFT0hpcGh1TEc0Zzg4YVNZdFExYXJZSkRQbWhwOXhmbSt2M21jcWhxWnBFV09LSUV1MjZiCngyOXBJNjF6SGdYU1BqcVFFeHREOVVHOE9YSjZvM1hpc1Z5M3BTc0NnWUVBa0xndlpPOWw2WHdIYUlsWjNDOFgKc0VRczk3OVBUZm4xbmV1clJ3V2RXM1Y4bkduODJNbno0VHJBTGRlS0NGcXlLZTVWTWN4SElzb3BRaGhWOC9BUApmeDVjR1dtQTJRdEkzblRTczFaT2pZZEZaRVhKbzBkMkFLNEVBeGczQVViSDIrSkdXYmQ3K0RwbStrR0FhUzAwCkFubStMc1ZVbElPbW14SmNXZ2ovSmRrQ2dZQWtTNmFISm1FUWxLNS9rTzQyUFQ2TDA3cHc0UkxsaXQ3ZDBWeW8KK1FzaEJsUFZCNUhaOEhVQ2RYZDFoSnZURmlUUmd6aEE5QjhwbWlnN0hZK3NleksyZjBZZXBmMmI2YUhLMDRDZAovOUErdzg5d2ZoZVhWaG5IUTFNRXA3ZDBaNlRPTU1mdWZBdmk4RXJSa2RWNmhudkg0NWdyUWw4bkJMNEEvRjMzClVKWlo0UUtCZ0E3SzZKYUowbWhYQTlRcFpvUXhkK21DYmFBWFpTV3VrdUhxK2d0enlrdit5ZjdmUXV1dGpyM1EKelRMdUVSMGlqOTdjWmg0Q05NdCtDYXZkMHRGbGJKSVEwZVZCQXd6a01TaGhFMnFxaFQxVDd6MUw1TmFBaVg5aQpxQmJLQjNGTDhOeTNlZ1ZWUE1LbHVjSTVrSG9ibUhoWjAzNkVlNFlLMWNQc1BlWitCNGdqCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-example
+  namespace: default
+  labels:
+    api: my-example
+    apiserver: "true"
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    api: my-example
+    apiserver: "true"

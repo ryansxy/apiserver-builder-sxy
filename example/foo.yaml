@@ -1,0 +1,5 @@
+apiVersion: demo.sample.sxy.io/v1
+kind: Foo
+metadata:
+  name: foo-test
+spec:
